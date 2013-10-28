@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2005-2013, Stefan Strömberg <stestr@nethome.nu>
+ * Copyright (C) 2005-2013, Stefan Strömberg <stefangs@nethome.nu>
  *
- * This file is part of OpenNetHome.
+ * This file is part of OpenNetHome (http://www.nethome.nu).
  *
  * OpenNetHome is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
