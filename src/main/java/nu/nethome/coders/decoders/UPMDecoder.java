@@ -122,13 +122,13 @@ public class UPMDecoder implements ProtocolDecoder {
 			 * 
 			 * ____Byte 0_____  ____Byte 1_____  ____Byte 2_____  ____Byte 3_____  _Nib4__
 			 * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  3 2 1 0
-			 * x x x x c c c c  d d y y b S S S  s s s s s P P P  p p p p p p p p  z z C C
+			 * x x x x c c c c  d d y y b S S S  s s s s P P P P  p p p p p p p p  z z C C
 			 *                                            
 			 * Temp (C) = RawValue / 16 - 50
 			 * Rain (total mm) = RawValue * 0,7
 			 * Wind Speed (mph)= RawValue (* 1/3,6 for km/h)
-			 * Humidity (%) = RawValue / 2
-			 * Wind direction (deg) = RawValue * 22,5
+			 * Humidity (%) = RawValue
+			 * Wind direction (deg) = RawValue * 45
 			 * 
 			 */
         int houseCode  = 0;
@@ -144,8 +144,8 @@ public class UPMDecoder implements ProtocolDecoder {
 
         houseCode = message.getRawMessage()[0] & 0x0F;
         deviceCode = ((message.getRawMessage()[1] >> 6) & 0x03) + 1;
-        primary = ((message.getRawMessage()[2] & 0x07) << 8) + message.getRawMessage()[3];
-        secondary = ((message.getRawMessage()[1] & 0x07) << 5) + (message.getRawMessage()[2] >> 3);
+        primary = ((message.getRawMessage()[2] & 0x0F) << 8) + message.getRawMessage()[3];
+        secondary = ((message.getRawMessage()[1] & 0x07) << 4) + (message.getRawMessage()[2] >> 4);
         lowBattery = (message.getRawMessage()[1] >> 3) & 0x01;
         sequenceNumber = (message.getRawMessage()[4] >> 2) & 0x03;
         checksum = message.getRawMessage()[4] & 0x03;
