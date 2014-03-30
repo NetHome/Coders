@@ -45,6 +45,7 @@ public class Decoders {
         result.add(WavemanDecoder.class);
         result.add(X10Decoder.class);
         result.add(ZhejiangDecoder.class);
+        result.add(OregonDecoder.class);
         return result;
     }
 }

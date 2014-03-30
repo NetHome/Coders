@@ -50,7 +50,8 @@ public class JirFileTestPlayer implements ProtocolDecoderSink{
 	public static final int X10_DECODER = 1 << 11;
 	public static final int Waveman_DECODER = 1 << 12;
 	public static final int NexaFire_DECODER = 1 << 13;
-	
+	public static final int OREGON_DECODER = 1 << 14;
+
 	public static final int ALL_DECODERS = 0x7FFFFFFF;
 
 
@@ -78,6 +79,7 @@ public class JirFileTestPlayer implements ProtocolDecoderSink{
 		if ((decoders & X10_DECODER) != 0) m_ProtocolDecoders.add(new X10Decoder());
 		if ((decoders & Waveman_DECODER) != 0) m_ProtocolDecoders.add(new WavemanDecoder());
 		if ((decoders & NexaFire_DECODER) != 0) m_ProtocolDecoders.add(new NexaFireDecoder());
+		if ((decoders & OREGON_DECODER) != 0) m_ProtocolDecoders.add(new OregonDecoder());
 
         // Set the Sink - which is this class
         m_ProtocolDecoders.setTarget(this);
