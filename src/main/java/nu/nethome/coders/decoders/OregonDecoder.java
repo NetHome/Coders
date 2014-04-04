@@ -137,7 +137,10 @@ public class OregonDecoder implements ProtocolDecoder {
         int channel = nibbles[CHANNEL];
         int rollingId = (nibbles[IDENTITY] << 4) + nibbles[IDENTITY + 1];
         int lowBattery = (nibbles[FLAGS] & LOW_BATTERY_BIT) != 0 ? 1 : 0;
-        ProtocolMessage message = new ProtocolMessage("Oregon", sensorType, rollingId, 0);
+        ProtocolMessage message = new ProtocolMessage("Oregon", sensorType, rollingId, currentSensor.messageLength());
+        for (int i = 0; i < currentSensor.messageLength(); i++) {
+            message.setRawMessageByteAt(i, nibbles[i]);
+        }
         message.addField(new FieldValue("SensorId", sensorType));
         message.addField(new FieldValue("Channel", channel));
         message.addField(new FieldValue("Id", rollingId));
