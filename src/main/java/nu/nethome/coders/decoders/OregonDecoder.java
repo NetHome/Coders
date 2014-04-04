@@ -22,6 +22,9 @@ package nu.nethome.coders.decoders;
 import nu.nethome.util.plugin.Plugin;
 import nu.nethome.util.ps.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @Plugin
 public class OregonDecoder implements ProtocolDecoder {
@@ -51,8 +54,9 @@ public class OregonDecoder implements ProtocolDecoder {
     public static final int TEMP_VALUE = 9;             // 3 Nibbles, temperature as BCD in reverse order
     public static final int TEMP_SIGN = 12;             // 1 Nibble, <> 0 means negative temperature
     public static final int MOISTURE_VALUE = 13;        // 2 Nibbles, moisture value as BCD in reverse order
-    public static final int CHECKSUM = 16;              // 2 Nibbles
-    public static final int MESSAGE_LENGTH = 19;
+    public static final int WIND_DIRECTION = 9;         // 1 Nibble, direction value, binary
+    public static final int WIND_SPEED = 12;            // 3 Nibbles, speed value as BCD in reverse order
+    public static final int AVG_WIND_SPEED = 15;        // 3 Nibbles, speed value as BCD in reverse order
 
     protected int m_State = IDLE;
 
@@ -66,6 +70,13 @@ public class OregonDecoder implements ProtocolDecoder {
     private boolean isInvertedBit;
     private int invertedBit;
     private byte[] nibbles = new byte[MAX_NIBBLES];
+    private static Map<Integer, Sensor> sensors = new HashMap<Integer, Sensor>();
+    private Sensor currentSensor;
+
+    public OregonDecoder() {
+        addSensor(new TempHumSensor());
+        addSensor(new TempSensor());
+    }
 
     public void setTarget(ProtocolDecoderSink sink) {
         m_Sink = sink;
@@ -73,6 +84,19 @@ public class OregonDecoder implements ProtocolDecoder {
 
     public ProtocolInfo getInfo() {
         return new ProtocolInfo("Oregon", "Manchester", "Oregon Scientific", 19 * 4, 2);
+    }
+
+    private void addSensor(Sensor sensor) {
+        for (int id : sensor.idCodes()) {
+            sensors.put(id, sensor);
+        }
+    }
+
+    private void selectSensor(int sensorId) {
+        currentSensor = sensors.get(sensorId);
+        if (currentSensor == null) {
+            m_State = IDLE;
+        }
     }
 
     protected boolean pulseCompare(double candidate, double standard) {
@@ -97,40 +121,55 @@ public class OregonDecoder implements ProtocolDecoder {
 
     protected void addNibble(byte nibble) {
         nibbles[nibbleCounter++] = nibble;
-        // Check if this is a complete message
-        if (nibbleCounter == MESSAGE_LENGTH) {
+        if (nibbleCounter == 6) {
+            selectSensor(decodeSensorType(nibbles));
+        }
+        if (nibbleCounter > 6 && nibbleCounter >= currentSensor.messageLength()) {
             decodeMessage(nibbles);
         }
     }
 
     public void decodeMessage(byte[] nibbles) {
-        int sensorType = (nibbles[SENSOR_TYPE] << 12) + (nibbles[SENSOR_TYPE + 1] << 8) + (nibbles[SENSOR_TYPE + 2] << 4) + nibbles[SENSOR_TYPE + 3];
+        int sensorType = decodeSensorType(nibbles);
         int channel = nibbles[CHANNEL];
         int rollingId = (nibbles[IDENTITY] << 4) + nibbles[IDENTITY + 1];
         int lowBattery = (nibbles[FLAGS] & LOW_BATTERY_BIT) != 0 ? 1 : 0;
-        int temp = (nibbles[TEMP_VALUE + 2] * 100 + nibbles[TEMP_VALUE + 1] * 10 + nibbles[TEMP_VALUE]) * (nibbles[TEMP_SIGN] != 0 ? -1 : 1);
-        int moisture = nibbles[MOISTURE_VALUE + 1] * 10 + nibbles[MOISTURE_VALUE];
-        int checksum = (nibbles[CHECKSUM + 1] << 4) + nibbles[CHECKSUM];
-        int calculatedChecksum = 0;
-        for (int i = 1; i < 16; i++) {
-            calculatedChecksum += nibbles[i];
-        }
-
-        ProtocolMessage message = new ProtocolMessage("Oregon", temp, channel, 2);
-        message.setRawMessageByteAt(1, moisture);
-        message.setRawMessageByteAt(0, temp);
-
+        ProtocolMessage message = new ProtocolMessage("Oregon", sensorType, rollingId, 0);
         message.addField(new FieldValue("SensorId", sensorType));
         message.addField(new FieldValue("Channel", channel));
         message.addField(new FieldValue("Id", rollingId));
-        message.addField(new FieldValue("Temp", temp));
-        message.addField(new FieldValue("Moisture", moisture));
         message.addField(new FieldValue("LowBattery", lowBattery));
-
-        // Report the parsed message
-        m_Sink.parsedMessage(message);
-        // Reset state
+        if (currentSensor.hasTemperature()) {
+            decodeTemperature(nibbles, message);
+        }
+        if (currentSensor.hasHumidity()) {
+            decodeHumidity(nibbles, message);
+        }
+        int checksum = (nibbles[currentSensor.messageLength() - 1] << 4) + nibbles[currentSensor.messageLength() - 2];
+        int calculatedChecksum = 0;
+        for (int i = 1; i < currentSensor.messageLength() - 2; i++) {
+            calculatedChecksum += nibbles[i];
+        }
+        if (checksum == (calculatedChecksum & 0xFF)) {
+            m_Sink.parsedMessage(message);
+        }
         m_State = IDLE;
+    }
+
+    private int decodeHumidity(byte[] nibbles, ProtocolMessage message) {
+        int moisture = nibbles[MOISTURE_VALUE + 1] * 10 + nibbles[MOISTURE_VALUE];
+        message.addField(new FieldValue("Moisture", moisture));
+        return moisture;
+    }
+
+    private int decodeTemperature(byte[] nibbles, ProtocolMessage message) {
+        int temp = (nibbles[TEMP_VALUE + 2] * 100 + nibbles[TEMP_VALUE + 1] * 10 + nibbles[TEMP_VALUE]) * (nibbles[TEMP_SIGN] != 0 ? -1 : 1);
+        message.addField(new FieldValue("Temp", temp));
+        return temp;
+    }
+
+    private int decodeSensorType(byte[] nibbles) {
+        return (nibbles[SENSOR_TYPE] << 12) + (nibbles[SENSOR_TYPE + 1] << 8) + (nibbles[SENSOR_TYPE + 2] << 4) + nibbles[SENSOR_TYPE + 3];
     }
 
     public int parse(double pulse, boolean isMark) {
@@ -199,5 +238,79 @@ public class OregonDecoder implements ProtocolDecoder {
         }
         m_LastValue = pulse;
         return m_State;
+    }
+
+    public static abstract class Sensor {
+        public abstract int[] idCodes();
+        public abstract int messageLength();
+        public boolean hasTemperature() {
+            return false;
+        }
+        public boolean hasHumidity() {
+            return false;
+        }
+        public boolean hasUvIndex() {
+            return false;
+        }
+        public boolean hasWindDirection() {
+            return false;
+        }
+        public boolean hasWindSpeed() {
+            return false;
+        }
+        public boolean hasRainMm() {
+            return false;
+        }
+        public boolean hasRainIn() {
+            return false;
+        }
+        public boolean hasBarometer() {
+            return false;
+        }
+    }
+
+    public static class TempHumSensor extends Sensor {
+
+        private static final int codes[] = {0x1D20, 0xF824, 0xF8B4};
+
+        @Override
+        public int[] idCodes() {
+            return codes;
+        }
+
+        @Override
+        public int messageLength() {
+            return 18;
+        }
+
+        @Override
+        public boolean hasTemperature() {
+            return true;
+        }
+
+        @Override
+        public boolean hasHumidity() {
+            return true;
+        }
+    }
+
+    public static class TempSensor extends Sensor {
+
+        private static final int codes[] = {0xEC40, 0xC844};
+
+        @Override
+        public int[] idCodes() {
+            return codes;
+        }
+
+        @Override
+        public int messageLength() {
+            return 15;
+        }
+
+        @Override
+        public boolean hasTemperature() {
+            return true;
+        }
     }
 }
