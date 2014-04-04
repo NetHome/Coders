@@ -67,6 +67,18 @@ public class OregonDecoderTest {
         verifyTemperature(0xC844, -190);
     }
 
+    @Test
+    public void windSensor1984WithKnownTestVector() throws Exception {
+        receiveMessage("A198416B1800063892D4");
+        verifyWind(0x1984);
+    }
+
+    @Test
+    public void windSensor1994WithKnownTestVector() throws Exception {
+        receiveMessage("A199416B1800063892E4");
+        verifyWind(0x1994);
+    }
+
     private void verifyTemperature(int sensorId, int temperature) {
         verify(sink, times(1)).parsedMessage(messageCaptor.capture());
         assertThat(getMessageField("SensorId"), is(sensorId));
@@ -74,6 +86,17 @@ public class OregonDecoderTest {
         assertThat(getMessageField("Id"), is(0x6B));
         assertThat(getMessageField("Temp"), is(temperature));
         assertThat(getMessageField("LowBattery"), is(0));
+    }
+
+    private void verifyWind(int sensorId) {
+        verify(sink, times(1)).parsedMessage(messageCaptor.capture());
+        assertThat(getMessageField("SensorId"), is(sensorId));
+        assertThat(getMessageField("Channel"), is(1));
+        assertThat(getMessageField("Id"), is(0x6B));
+        assertThat(getMessageField("LowBattery"), is(0));
+        assertThat(getMessageField("Direction"), is(8));
+        assertThat(getMessageField("Wind"), is(360));
+        assertThat(getMessageField("AverageWind"), is(298));
     }
 
     private void receiveMessage(String s) {

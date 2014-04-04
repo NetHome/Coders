@@ -39,7 +39,7 @@ public class OregonDecoder implements ProtocolDecoder {
     protected static final int OREGON_LONG = 975;
     protected static final int MIN_PREAMBLE_PULSES = 16;
     protected static final BitString.Field NIBBLE = new BitString.Field(0, 4);
-    protected static final int MAX_NIBBLES = 20;
+    protected static final int MAX_NIBBLES = 22;
 
 
     /**
@@ -51,9 +51,11 @@ public class OregonDecoder implements ProtocolDecoder {
     public static final int IDENTITY = 6;               // 2 Nibbles, identity of sensor, changes on power loss
     public static final int FLAGS = 8;                  // 1 Nibble, flags
     public static final int LOW_BATTERY_BIT = 0x04;     // Low power indication bit in FLAGS
+
     public static final int TEMP_VALUE = 9;             // 3 Nibbles, temperature as BCD in reverse order
     public static final int TEMP_SIGN = 12;             // 1 Nibble, <> 0 means negative temperature
     public static final int MOISTURE_VALUE = 13;        // 2 Nibbles, moisture value as BCD in reverse order
+
     public static final int WIND_DIRECTION = 9;         // 1 Nibble, direction value, binary
     public static final int WIND_SPEED = 12;            // 3 Nibbles, speed value as BCD in reverse order
     public static final int AVG_WIND_SPEED = 15;        // 3 Nibbles, speed value as BCD in reverse order
@@ -76,6 +78,7 @@ public class OregonDecoder implements ProtocolDecoder {
     public OregonDecoder() {
         addSensor(new TempHumSensor());
         addSensor(new TempSensor());
+        addSensor(new WindSensor());
     }
 
     public void setTarget(ProtocolDecoderSink sink) {
@@ -145,6 +148,9 @@ public class OregonDecoder implements ProtocolDecoder {
         if (currentSensor.hasHumidity()) {
             decodeHumidity(nibbles, message);
         }
+        if (currentSensor.hasWind()) {
+            decodeWind(nibbles, message);
+        }
         int checksum = (nibbles[currentSensor.messageLength() - 1] << 4) + nibbles[currentSensor.messageLength() - 2];
         int calculatedChecksum = 0;
         for (int i = 1; i < currentSensor.messageLength() - 2; i++) {
@@ -166,6 +172,15 @@ public class OregonDecoder implements ProtocolDecoder {
         int temp = (nibbles[TEMP_VALUE + 2] * 100 + nibbles[TEMP_VALUE + 1] * 10 + nibbles[TEMP_VALUE]) * (nibbles[TEMP_SIGN] != 0 ? -1 : 1);
         message.addField(new FieldValue("Temp", temp));
         return temp;
+    }
+
+    private void decodeWind(byte[] nibbles, ProtocolMessage message) {
+        int direction = nibbles[WIND_DIRECTION];
+        message.addField(new FieldValue("Direction", direction));
+        int speed = nibbles[WIND_SPEED + 2] * 100 + nibbles[WIND_SPEED + 1] * 10 + nibbles[WIND_SPEED];
+        message.addField(new FieldValue("Wind", speed));
+        int averageSpeed = nibbles[AVG_WIND_SPEED + 2] * 100 + nibbles[AVG_WIND_SPEED + 1] * 10 + nibbles[AVG_WIND_SPEED];
+        message.addField(new FieldValue("AverageWind", averageSpeed));
     }
 
     private int decodeSensorType(byte[] nibbles) {
@@ -252,10 +267,7 @@ public class OregonDecoder implements ProtocolDecoder {
         public boolean hasUvIndex() {
             return false;
         }
-        public boolean hasWindDirection() {
-            return false;
-        }
-        public boolean hasWindSpeed() {
+        public boolean hasWind() {
             return false;
         }
         public boolean hasRainMm() {
@@ -295,21 +307,32 @@ public class OregonDecoder implements ProtocolDecoder {
     }
 
     public static class TempSensor extends Sensor {
-
         private static final int codes[] = {0xEC40, 0xC844};
-
         @Override
         public int[] idCodes() {
             return codes;
         }
-
         @Override
         public int messageLength() {
             return 15;
         }
-
         @Override
         public boolean hasTemperature() {
+            return true;
+        }
+    }
+    public static class WindSensor extends Sensor {
+        private static final int codes[] = {0x1984, 0x1994};
+        @Override
+        public int[] idCodes() {
+            return codes;
+        }
+        @Override
+        public int messageLength() {
+            return 20;
+        }
+        @Override
+        public boolean hasWind() {
             return true;
         }
     }
