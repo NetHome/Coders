@@ -37,6 +37,15 @@ public class OregonDecoder implements ProtocolDecoder {
 
     protected static final int OREGON_SHORT = 490;
     protected static final int OREGON_LONG = 975;
+    public static final PulseLength OREGON_SHORT_MARK =
+            new PulseLength(OregonDecoder.class,"OREGON_SHORT_MARK", 396, 200, 615);
+    public static final PulseLength OREGON_LONG_MARK =
+            new PulseLength(OregonDecoder.class,"OREGON_LONG_MARK", 884, 615, 1100);
+    public static final PulseLength OREGON_SHORT_SPACE =
+            new PulseLength(OregonDecoder.class,"OREGON_SHORT_SPACE", 580, 400, 850);
+    public static final PulseLength OREGON_LONG_SPACE =
+            new PulseLength(OregonDecoder.class,"OREGON_LONG_SPACE", 1069, 850, 1400);
+
     protected static final int MIN_PREAMBLE_PULSES = 16;
     protected static final BitString.Field NIBBLE = new BitString.Field(0, 4);
     protected static final int MAX_NIBBLES = 22;
@@ -60,6 +69,11 @@ public class OregonDecoder implements ProtocolDecoder {
     public static final int WIND_SPEED = 12;            // 3 Nibbles, speed value as BCD in reverse order
     public static final int AVG_WIND_SPEED = 15;        // 3 Nibbles, speed value as BCD in reverse order
 
+    public static final int RAIN_RATE_MM = 9;           // 3 Nibbles, rain in mm BCD in reverse order
+    public static final int TOTAL_RAIN_MM = 12;         // 5 Nibbles, rain in mm BCD in reverse order
+
+    public static final int BAROMETER = 17;             // 3 Nibbles, pressure as binary value
+
     protected int m_State = IDLE;
 
     private BitString data = new BitString();
@@ -79,6 +93,8 @@ public class OregonDecoder implements ProtocolDecoder {
         addSensor(new TempHumSensor());
         addSensor(new TempSensor());
         addSensor(new WindSensor());
+        addSensor(new RainSensorMm());
+        addSensor(new PressureSensor());
     }
 
     public void setTarget(ProtocolDecoderSink sink) {
@@ -154,6 +170,12 @@ public class OregonDecoder implements ProtocolDecoder {
         if (currentSensor.hasWind()) {
             decodeWind(nibbles, message);
         }
+        if (currentSensor.hasRainMm()) {
+            decodeRainMm(nibbles, message);
+        }
+        if (currentSensor.hasBarometer()) {
+            decodeBarometer(nibbles, message);
+        }
         int checksum = (nibbles[currentSensor.messageLength() - 1] << 4) + nibbles[currentSensor.messageLength() - 2];
         int calculatedChecksum = 0;
         for (int i = 1; i < currentSensor.messageLength() - 2; i++) {
@@ -163,6 +185,19 @@ public class OregonDecoder implements ProtocolDecoder {
             m_Sink.parsedMessage(message);
         }
         m_State = IDLE;
+    }
+
+    private void decodeBarometer(byte[] nibbles, ProtocolMessage message) {
+        int pressure = (nibbles[BAROMETER + 2] << 8) + (nibbles[BAROMETER + 1] << 4) + nibbles[BAROMETER];
+        message.addField(new FieldValue("Pressure", pressure));
+    }
+
+    private void decodeRainMm(byte[] nibbles, ProtocolMessage message) {
+        int rate = nibbles[RAIN_RATE_MM + 2] * 100 + nibbles[RAIN_RATE_MM + 1] * 10 + nibbles[RAIN_RATE_MM];
+        message.addField(new FieldValue("RainRate", rate));
+        int rain = nibbles[TOTAL_RAIN_MM + 4] * 10000 + nibbles[TOTAL_RAIN_MM + 3] * 1000 +
+                nibbles[TOTAL_RAIN_MM + 2] * 100 + nibbles[TOTAL_RAIN_MM + 1] * 10 + nibbles[TOTAL_RAIN_MM];
+        message.addField(new FieldValue("TotalRain", rain));
     }
 
     private int decodeHumidity(byte[] nibbles, ProtocolMessage message) {
@@ -193,16 +228,16 @@ public class OregonDecoder implements ProtocolDecoder {
     public int parse(double pulse, boolean isMark) {
         switch (m_State) {
             case IDLE: {
-                if (pulseCompare(pulse, OREGON_LONG) && isMark) {
+                if (OREGON_LONG_MARK.matches(pulse) && isMark) {
                     m_State = PREAMBLE;
                     preambleCount = 0;
                 }
                 break;
             }
             case PREAMBLE: {
-                if (pulseCompare(pulse, OREGON_LONG)) {
+                if (OREGON_LONG_MARK.matches(pulse)) {
                     preambleCount++;
-                } else if (pulseCompare(pulse, OREGON_SHORT) && !isMark && (preambleCount > MIN_PREAMBLE_PULSES)) {
+                } else if (OREGON_SHORT_SPACE.matches(pulse) && !isMark && (preambleCount > MIN_PREAMBLE_PULSES)) {
                     data.clear();
                     nibbleCounter = 0;
                     isInvertedBit = true;
@@ -213,9 +248,9 @@ public class OregonDecoder implements ProtocolDecoder {
                 break;
             }
             case HI_IN: {
-                if (pulseCompare(pulse, OREGON_SHORT)) {
+                if (OREGON_SHORT_MARK.matches(pulse)) {
                     m_State = LO_BETWEEN;
-                } else if (pulseCompare(pulse, OREGON_LONG)) {
+                } else if (OREGON_LONG_MARK.matches(pulse)) {
                     m_State = LO_IN;
                     addBit(1);
                 } else {
@@ -224,7 +259,7 @@ public class OregonDecoder implements ProtocolDecoder {
                 break;
             }
             case HI_BETWEEN: {
-                if (pulseCompare(pulse, OREGON_SHORT)) {
+                if (OREGON_SHORT_MARK.matches(pulse)) {
                     m_State = LO_IN;
                     addBit(1);
                 } else {
@@ -233,10 +268,10 @@ public class OregonDecoder implements ProtocolDecoder {
                 break;
             }
             case LO_IN: {
-                if (pulseCompare(pulse, OREGON_SHORT)) {
+                if (OREGON_SHORT_SPACE.matches(pulse)) {
                     m_State = HI_BETWEEN;
                     break;
-                } else if (pulseCompare(pulse, OREGON_LONG)) {
+                } else if (OREGON_LONG_SPACE.matches(pulse)) {
                     m_State = HI_IN;
                     addBit(0);
                 } else {
@@ -245,7 +280,7 @@ public class OregonDecoder implements ProtocolDecoder {
                 break;
             }
             case LO_BETWEEN: {
-                if (pulseCompare(pulse, OREGON_SHORT)) {
+                if (OREGON_SHORT_SPACE.matches(pulse)) {
                     m_State = HI_IN;
                     addBit(0);
                 } else {
@@ -285,24 +320,19 @@ public class OregonDecoder implements ProtocolDecoder {
     }
 
     public static class TempHumSensor extends Sensor {
-
         private static final int codes[] = {0x1D20, 0xF824, 0xF8B4};
-
         @Override
         public int[] idCodes() {
             return codes;
         }
-
         @Override
         public int messageLength() {
             return 18;
         }
-
         @Override
         public boolean hasTemperature() {
             return true;
         }
-
         @Override
         public boolean hasHumidity() {
             return true;
@@ -336,6 +366,44 @@ public class OregonDecoder implements ProtocolDecoder {
         }
         @Override
         public boolean hasWind() {
+            return true;
+        }
+    }
+    public static class RainSensorMm extends Sensor {
+        private static final int codes[] = {0x2D10};
+        @Override
+        public int[] idCodes() {
+            return codes;
+        }
+        @Override
+        public int messageLength() {
+            return 19;
+        }
+        @Override
+        public boolean hasRainMm() {
+            return true;
+        }
+    }
+    public static class PressureSensor extends Sensor {
+        private static final int codes[] = {0x5D60};
+        @Override
+        public int[] idCodes() {
+            return codes;
+        }
+        @Override
+        public int messageLength() {
+            return 22;
+        }
+        @Override
+        public boolean hasTemperature() {
+            return true;
+        }
+        @Override
+        public boolean hasHumidity() {
+            return true;
+        }
+        @Override
+        public boolean hasBarometer() {
             return true;
         }
     }

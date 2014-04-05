@@ -42,6 +42,13 @@ public class OregonDecoderTest {
     }
 
     @Test
+    public void tempHumiditySensor1D20WithLowBattery() throws Exception {
+        receiveMessage("A1D2016B5091073A54");
+        verify(sink, times(1)).parsedMessage(messageCaptor.capture());
+        assertThat(getMessageField("LowBattery"), is(1));
+    }
+
+    @Test
     public void tempHumiditySensorF824WithKnownTestVector() throws Exception {
         receiveMessage("AF82416B1091073AE4");
         verifyTemperature(0xF824, 190);
@@ -79,6 +86,20 @@ public class OregonDecoderTest {
         verifyWind(0x1994);
     }
 
+    @Test
+    public void rainSensor2D10WithKnownTestVector() throws Exception {
+        receiveMessage("A2D1016B15211235063");
+        verifyRain(0x2D10);
+    }
+
+    @Test
+    public void tempHumidityPressureSensor5D60WithKnownTestVector() throws Exception {
+        receiveMessage("A5D6016B109107300FF1E5");
+        verifyTemperature(0x5D60, 190);
+        assertThat(getMessageField("Moisture"), is(37));
+        assertThat(getMessageField("Pressure"), is(511));
+    }
+
     private void verifyTemperature(int sensorId, int temperature) {
         verify(sink, times(1)).parsedMessage(messageCaptor.capture());
         assertThat(getMessageField("SensorId"), is(sensorId));
@@ -97,6 +118,16 @@ public class OregonDecoderTest {
         assertThat(getMessageField("Direction"), is(8));
         assertThat(getMessageField("Wind"), is(360));
         assertThat(getMessageField("AverageWind"), is(298));
+    }
+
+    private void verifyRain(int sensorId) {
+        verify(sink, times(1)).parsedMessage(messageCaptor.capture());
+        assertThat(getMessageField("SensorId"), is(sensorId));
+        assertThat(getMessageField("Channel"), is(1));
+        assertThat(getMessageField("Id"), is(0x6B));
+        assertThat(getMessageField("LowBattery"), is(0));
+        assertThat(getMessageField("RainRate"), is(125));
+        assertThat(getMessageField("TotalRain"), is(5321));
     }
 
     private void receiveMessage(String s) {
