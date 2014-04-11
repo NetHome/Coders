@@ -42,6 +42,14 @@ public class OregonDecoderTest {
     }
 
     @Test
+    public void tempHumiditySensor1D20WithKnownTestVectorDirectly() throws Exception {
+        final byte message[] = {0xA, 0x1, 0xD, 0x2, 0x0, 0x1, 0x6, 0xB, 0x1, 0x0, 0x9, 0x1, 0x0, 0x7, 0x3, 0xA, 0x1, 0x4};
+        decoder.decodeMessage(message);
+        verifyTemperature(0x1D20, 190);
+        assertThat(getMessageField("Moisture"), is(37));
+    }
+
+    @Test
     public void tempHumiditySensor1D20WithLowBattery() throws Exception {
         receiveMessage("A1D2016B5091073A54");
         verify(sink, times(1)).parsedMessage(messageCaptor.capture());

@@ -111,11 +111,13 @@ public class OregonDecoder implements ProtocolDecoder {
         }
     }
 
-    private void selectSensor(int sensorId) {
+    private boolean selectSensor(int sensorId) {
         currentSensor = sensors.get(sensorId);
         if (currentSensor == null) {
             m_State = IDLE;
+            return false;
         }
+        return true;
     }
 
     protected boolean pulseCompare(double candidate, double standard) {
@@ -149,6 +151,9 @@ public class OregonDecoder implements ProtocolDecoder {
     }
 
     public void decodeMessage(byte[] nibbles) {
+        if (!selectSensor(decodeSensorType(nibbles))) {
+            return;
+        }
         int sensorType = decodeSensorType(nibbles);
         int channel = nibbles[CHANNEL];
         int rollingId = (nibbles[IDENTITY] << 4) + nibbles[IDENTITY + 1];
@@ -320,6 +325,7 @@ public class OregonDecoder implements ProtocolDecoder {
     }
 
     public static class TempHumSensor extends Sensor {
+        private static final String models = "THGN132N, THGR122NX, THGN123N, THGR810, THGR810";
         private static final int codes[] = {0x1D20, 0xF824, 0xF8B4};
         @Override
         public int[] idCodes() {
@@ -340,6 +346,7 @@ public class OregonDecoder implements ProtocolDecoder {
     }
 
     public static class TempSensor extends Sensor {
+        private static final String models = "THN132N, THR238NF, THWR800";
         private static final int codes[] = {0xEC40, 0xC844};
         @Override
         public int[] idCodes() {
@@ -355,6 +362,7 @@ public class OregonDecoder implements ProtocolDecoder {
         }
     }
     public static class WindSensor extends Sensor {
+        private static final String models = "WGR800";
         private static final int codes[] = {0x1984, 0x1994};
         @Override
         public int[] idCodes() {
@@ -370,6 +378,7 @@ public class OregonDecoder implements ProtocolDecoder {
         }
     }
     public static class RainSensorMm extends Sensor {
+        private static final String models = "RGR968";
         private static final int codes[] = {0x2D10};
         @Override
         public int[] idCodes() {
@@ -385,6 +394,7 @@ public class OregonDecoder implements ProtocolDecoder {
         }
     }
     public static class PressureSensor extends Sensor {
+        private static final String models = "BTHR968";
         private static final int codes[] = {0x5D60};
         @Override
         public int[] idCodes() {
