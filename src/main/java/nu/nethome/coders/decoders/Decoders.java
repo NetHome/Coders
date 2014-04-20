@@ -46,6 +46,7 @@ public class Decoders {
         result.add(X10Decoder.class);
         result.add(ZhejiangDecoder.class);
         result.add(OregonDecoder.class);
+        result.add(FineOffsetDecoder.class);
         return result;
     }
 }
