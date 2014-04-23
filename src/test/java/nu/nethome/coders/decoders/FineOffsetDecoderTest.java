@@ -14,6 +14,8 @@ public class FineOffsetDecoderTest {
 
     }
 
+    // Todo test negative values
+
 
     @Test
     public void basicJir() {
