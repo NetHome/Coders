@@ -33,8 +33,6 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     protected static final int READING_BIT_SPACE = 3;
     protected static final int REPEAT_SCAN = 4;
 
-    protected static final String STATE_NAMES[] = {"IDLE", "READING_PREAMBLE", "READING_BIT_MARK", "READING_BIT_SPACE",
-            "REPEAT_SCAN"};
 
     // This are the pulse length constants for the protocol. The default values may
     // be overridden by system properties
@@ -47,7 +45,8 @@ public class FineOffsetDecoder implements ProtocolDecoder {
 
     public static final BitString.Field CHECKSUM = new BitString.Field(0, 8);
     public static final BitString.Field HUMIDITY = new BitString.Field(8, 8);
-    public static final BitString.Field TEMP = new BitString.Field(16, 12);
+    public static final BitString.Field TEMP = new BitString.Field(16, 11);
+    public static final BitString.Field TEMP_SIGN = new BitString.Field(27, 1);
     public static final BitString.Field IDENTITY = new BitString.Field(28, 12);
 
     private static final CRC8 crc = new CRC8Table(0x0131);
@@ -85,7 +84,8 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     public void decodeMessage(BitString binaryMessage) {
         int checksum = binaryMessage.extractInt(CHECKSUM);
         int humidity = binaryMessage.extractInt(HUMIDITY);
-        int temp = binaryMessage.extractInt(TEMP);
+        int tempSign = binaryMessage.extractInt(TEMP_SIGN);
+        int temp = binaryMessage.extractInt(TEMP) * (tempSign == 1 ? -1 : 1);
         int identity = binaryMessage.extractInt(IDENTITY);
         byte bytes[] = new byte[4];
         bytes[0] = (byte) binaryMessage.extractInt(BYTE_0);
@@ -107,6 +107,7 @@ public class FineOffsetDecoder implements ProtocolDecoder {
             message.addField(new FieldValue("Identity", identity));
             m_Sink.parsedMessage(message);
         }
+        state = IDLE;
     }
 
     public int parse(double pulse, boolean isMark) {
@@ -123,6 +124,7 @@ public class FineOffsetDecoder implements ProtocolDecoder {
                     ++preambleCount;
                 } else if (FINE_OFFSET_LONG_MARK.matches(pulse) && isMark && preambleCount >= 4) {
                     state = READING_BIT_SPACE;
+                    data.clear();
                     addBit(false);
                 } else if (FINE_OFFSET_SPACE.matches(pulse) && !isMark) {
                     // Ok, continue
