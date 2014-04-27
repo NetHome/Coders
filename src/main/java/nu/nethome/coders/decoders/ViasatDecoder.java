@@ -136,8 +136,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = LO_IN;
 				}
 				else {
-					m_Sink.partiallyParsedMessage("Viasat h", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat h");
 				}
 				break;
 			}
@@ -148,8 +147,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = LO_IN;
 					addBit(0);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -158,8 +156,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = LO_IN;
 					addBit(0);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -171,8 +168,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = HI_IN;
 					addBit(1);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -181,8 +177,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = HI_IN;
 					addBit(1);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -190,10 +185,17 @@ public class ViasatDecoder implements ProtocolDecoder {
 		m_LastValue = pulse;
 	}
 
-	
-	/* (non-Javadoc)
-	 * @see ssg.ir.IRDecoder#parse(java.lang.Double)
-	 */
+    private void invalidMessage(String message) {
+        if (m_BitCounter > 4) {
+            m_Sink.partiallyParsedMessage(message, m_BitCounter);
+        }
+        m_State = IDLE;
+    }
+
+
+    /* (non-Javadoc)
+     * @see ssg.ir.IRDecoder#parse(java.lang.Double)
+     */
 	public int parse(double pulse, boolean state) {
 		switch (m_State) {
 			case IDLE: {
@@ -242,8 +244,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = LO_IN;
 					addBit(1);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -254,8 +255,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = LO_BETWEEN;
 					addBit(0);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -268,8 +268,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = HI_IN;
 					addBit(1);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}
@@ -280,8 +279,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = HI_BETWEEN;
 					addBit(0);
 				} else {
-					m_Sink.partiallyParsedMessage("Viasat", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat");
 				}
 				break;
 			}

@@ -14,9 +14,6 @@ public class FineOffsetDecoderTest {
 
     }
 
-    // Todo test negative values
-
-
     @Test
     public void basicJir() {
         JirFileTestPlayer player = new JirFileTestPlayer(JirFileTestPlayer.FINE_OFFSET_DECODER);

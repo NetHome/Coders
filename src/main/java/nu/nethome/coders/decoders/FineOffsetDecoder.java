@@ -48,13 +48,23 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     public static final BitString.Field TEMP = new BitString.Field(16, 11);
     public static final BitString.Field TEMP_SIGN = new BitString.Field(27, 1);
     public static final BitString.Field IDENTITY = new BitString.Field(28, 12);
+    public static final BitString.Field SENSOR_TYPE = new BitString.Field(36, 4);
+
+    public static final BitString.Field UNKNOWN1 = new BitString.Field(8, 12);
+    public static final BitString.Field UNKNOWN2 = new BitString.Field(20, 4);
+    public static final BitString.Field RAIN2 = new BitString.Field(24, 8);
+    public static final BitString.Field TEMP_RAIN = new BitString.Field(32, 12);
+    public static final BitString.Field IDENTITY_RAIN = new BitString.Field(44, 12);
+
 
     private static final CRC8 crc = new CRC8Table(0x0131);
-    public static final BitString.Field BYTE_0 = new BitString.Field(32, 8);
-    public static final BitString.Field BYTE_1 = new BitString.Field(24, 8);
-    public static final BitString.Field BYTE_2 = new BitString.Field(16, 8);
-    public static final BitString.Field BYTE_3 = new BitString.Field(8, 8);
-    public static final BitString.Field BYTE_4 = new BitString.Field(0, 8);
+    public static final BitString.Field BYTE6 = new BitString.Field(48, 8);
+    public static final BitString.Field BYTE5 = new BitString.Field(40, 8);
+    public static final BitString.Field BYTE4 = new BitString.Field(32, 8);
+    public static final BitString.Field BYTE3 = new BitString.Field(24, 8);
+    public static final BitString.Field BYTE2 = new BitString.Field(16, 8);
+    public static final BitString.Field BYTE1 = new BitString.Field(8, 8);
+    public static final BitString.Field BYTE0 = new BitString.Field(0, 8);
 
     protected ProtocolDecoderSink m_Sink = null;
     BitString data = new BitString();
@@ -79,19 +89,44 @@ public class FineOffsetDecoder implements ProtocolDecoder {
         if (data.length() == 40) {
             decodeMessage(data);
         }
+        if (data.length() == 56) {
+            decodeRainMessage(data);
+        }
+    }
+
+    private void decodeRainMessage(BitString binaryMessage) {
+        int rain1 = binaryMessage.extractInt(UNKNOWN1);
+        int rain2 = binaryMessage.extractInt(RAIN2) * 3;
+        int unknown2 = binaryMessage.extractInt(UNKNOWN2);
+        int temp = binaryMessage.extractInt(TEMP_RAIN) - 400;
+        int identity = binaryMessage.extractInt(IDENTITY_RAIN);
+        int checksum = binaryMessage.extractInt(CHECKSUM);
+        byte bytes[] = new byte[6];
+        bytes[0] = (byte) binaryMessage.extractInt(BYTE6);
+        bytes[1] = (byte) binaryMessage.extractInt(BYTE5);
+        bytes[2] = (byte) binaryMessage.extractInt(BYTE4);
+        bytes[3] = (byte) binaryMessage.extractInt(BYTE3);
+        bytes[4] = (byte) binaryMessage.extractInt(BYTE2);
+        bytes[5] = (byte) binaryMessage.extractInt(BYTE1);
+        int calculatedChecksum = crc.calc(bytes);
+        state = IDLE;
     }
 
     public void decodeMessage(BitString binaryMessage) {
+        int sensorType = binaryMessage.extractInt(SENSOR_TYPE);
+        if (sensorType == 3) {
+            return;
+        }
         int checksum = binaryMessage.extractInt(CHECKSUM);
         int humidity = binaryMessage.extractInt(HUMIDITY);
         int tempSign = binaryMessage.extractInt(TEMP_SIGN);
         int temp = binaryMessage.extractInt(TEMP) * (tempSign == 1 ? -1 : 1);
         int identity = binaryMessage.extractInt(IDENTITY);
         byte bytes[] = new byte[4];
-        bytes[0] = (byte) binaryMessage.extractInt(BYTE_0);
-        bytes[1] = (byte) binaryMessage.extractInt(BYTE_1);
-        bytes[2] = (byte) binaryMessage.extractInt(BYTE_2);
-        bytes[3] = (byte) binaryMessage.extractInt(BYTE_3);
+        bytes[0] = (byte) binaryMessage.extractInt(BYTE4);
+        bytes[1] = (byte) binaryMessage.extractInt(BYTE3);
+        bytes[2] = (byte) binaryMessage.extractInt(BYTE2);
+        bytes[3] = (byte) binaryMessage.extractInt(BYTE1);
         int calculatedChecksum = crc.calc(bytes);
         if (calculatedChecksum == checksum) {
             ProtocolMessage message = new ProtocolMessage("FineOffset", temp, identity, 5);
@@ -99,7 +134,7 @@ public class FineOffsetDecoder implements ProtocolDecoder {
             message.setRawMessageByteAt(1, bytes[1]);
             message.setRawMessageByteAt(2, bytes[2]);
             message.setRawMessageByteAt(3, bytes[3]);
-            message.setRawMessageByteAt(4, (byte) binaryMessage.extractInt(BYTE_4));
+            message.setRawMessageByteAt(4, (byte) binaryMessage.extractInt(BYTE0));
             message.addField(new FieldValue("Temp", temp));
             if (humidity <= 100) {
                 message.addField(new FieldValue("Moisture", humidity));
