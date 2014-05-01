@@ -43,6 +43,18 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     public static final PulseLength FINE_OFFSET_SPACE =
             new PulseLength(FineOffsetDecoder.class, "FINE_OFFSET_SPACE", 1000, 500, 1500);
 
+    /**
+     * I = sensor type (and identity)
+     * i = sensor identity
+     * t = temperature t / 10
+     * h = humidity
+     * c = checksum
+     *
+     * ____Byte 0_____  ____Byte 1_____  ____Byte 2_____  ____Byte 3_____  ____Byte 6_____
+     * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0
+     * I I I I i i i i  i i i i s t t t  t t t t t t t t  h h h h h h h h  c c c c c c c c
+     */
+
     public static final BitString.Field CHECKSUM = new BitString.Field(0, 8);
     public static final BitString.Field HUMIDITY = new BitString.Field(8, 8);
     public static final BitString.Field TEMP = new BitString.Field(16, 11);
@@ -50,9 +62,25 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     public static final BitString.Field IDENTITY = new BitString.Field(28, 12);
     public static final BitString.Field SENSOR_TYPE = new BitString.Field(36, 4);
 
+
+    /**
+     * I = sensor type (and identity)
+     * i = sensor identity
+     * t = temperature (t - 400) / 10
+     * r = rain lo bits 0.3 mm per count
+     * R = rain high bits
+     * u = unknown
+     * c = checksum
+     *
+     * ____Byte 0_____  ____Byte 1_____  ____Byte 2_____  ____Byte 3_____  ____Byte 4_____  ____Byte 5_____  ____Byte 6_____
+     * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0
+     * I I I I i i i i  i i i i t t t t  t t t t t t t t  r r r r r r r r  0 0 0 0 R R R R  u u u u u u u u  c c c c c c c c
+     */
+
     public static final BitString.Field UNKNOWN1 = new BitString.Field(8, 12);
     public static final BitString.Field UNKNOWN2 = new BitString.Field(20, 4);
-    public static final BitString.Field RAIN2 = new BitString.Field(24, 8);
+    public static final BitString.Field RAIN_LO = new BitString.Field(24, 8);
+    public static final BitString.Field RAIN_HI = new BitString.Field(16, 4);
     public static final BitString.Field TEMP_RAIN = new BitString.Field(32, 12);
     public static final BitString.Field IDENTITY_RAIN = new BitString.Field(44, 12);
 
@@ -79,11 +107,6 @@ public class FineOffsetDecoder implements ProtocolDecoder {
         return new ProtocolInfo("Fineoffset", "Mark Length", "Fineoffset", 40, 1);
     }
 
-    /**
-     * ____Byte 2_____  ____Byte 1_____  ____Byte 0_____  _S_
-     * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0   0
-     * x o x 1 x 1 x x  x b x b x b x b  x a x a x a x a   s
-     */
     protected void addBit(boolean b) {
         data.addLsb(b);
         if (data.length() == 40) {
@@ -95,9 +118,7 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     }
 
     private void decodeRainMessage(BitString binaryMessage) {
-        int rain1 = binaryMessage.extractInt(UNKNOWN1);
-        int rain2 = binaryMessage.extractInt(RAIN2) * 3;
-        int unknown2 = binaryMessage.extractInt(UNKNOWN2);
+        int rain = (binaryMessage.extractInt(RAIN_LO) + (binaryMessage.extractInt(RAIN_HI) << 8)) * 3;
         int temp = binaryMessage.extractInt(TEMP_RAIN) - 400;
         int identity = binaryMessage.extractInt(IDENTITY_RAIN);
         int checksum = binaryMessage.extractInt(CHECKSUM);
@@ -109,6 +130,20 @@ public class FineOffsetDecoder implements ProtocolDecoder {
         bytes[4] = (byte) binaryMessage.extractInt(BYTE2);
         bytes[5] = (byte) binaryMessage.extractInt(BYTE1);
         int calculatedChecksum = crc.calc(bytes);
+        if (calculatedChecksum == checksum) {
+            ProtocolMessage message = new ProtocolMessage("FineOffset", temp, identity, 7);
+            message.setRawMessageByteAt(0, bytes[0]);
+            message.setRawMessageByteAt(1, bytes[1]);
+            message.setRawMessageByteAt(2, bytes[2]);
+            message.setRawMessageByteAt(3, bytes[3]);
+            message.setRawMessageByteAt(4, bytes[4]);
+            message.setRawMessageByteAt(5, bytes[5]);
+            message.setRawMessageByteAt(6, (byte) binaryMessage.extractInt(BYTE6));
+            message.addField(new FieldValue("Temp", temp));
+            message.addField(new FieldValue("Rain", rain));
+            message.addField(new FieldValue("Identity", identity));
+            m_Sink.parsedMessage(message);
+        }
         state = IDLE;
     }
 

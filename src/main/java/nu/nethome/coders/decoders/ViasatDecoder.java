@@ -221,8 +221,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = HI_BETWEEN;
 				}
 				else {
-					m_Sink.partiallyParsedMessage("Viasat h1", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat h1");
 				}
 				break;
 			}
@@ -231,8 +230,7 @@ public class ViasatDecoder implements ProtocolDecoder {
 					m_State = HI_BETWEEN;
 				}
 				else {
-					m_Sink.partiallyParsedMessage("Viasat h2", m_BitCounter);
-					m_State = IDLE;
+                    invalidMessage("Viasat h2");
 				}
 				break;
 			}
