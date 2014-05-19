@@ -58,6 +58,7 @@ public class FineOffsetDecoder implements ProtocolDecoder {
     public static final BitString.Field CHECKSUM = new BitString.Field(0, 8);
     public static final BitString.Field HUMIDITY = new BitString.Field(8, 8);
     public static final BitString.Field TEMP = new BitString.Field(16, 11);
+    public static final BitString.Field ENERGY = new BitString.Field(16, 12);
     public static final BitString.Field TEMP_SIGN = new BitString.Field(27, 1);
     public static final BitString.Field IDENTITY = new BitString.Field(28, 12);
     public static final BitString.Field SENSOR_TYPE = new BitString.Field(36, 4);
@@ -176,8 +177,20 @@ public class FineOffsetDecoder implements ProtocolDecoder {
             }
             message.addField(new FieldValue("Identity", identity));
             m_Sink.parsedMessage(message);
+            if (isFooGadgetEnergy(identity)) {
+                int energy = binaryMessage.extractInt(ENERGY);
+                ProtocolMessage fooMessage = new ProtocolMessage("FooGadgetEnergy", energy, identity, 0);
+                fooMessage.addField(new FieldValue("Energy", temp));
+                fooMessage.addField(new FieldValue("Counter", humidity));
+                fooMessage.addField(new FieldValue("Identity", identity));
+                m_Sink.parsedMessage(fooMessage);
+            }
         }
         state = IDLE;
+    }
+
+    private boolean isFooGadgetEnergy(int identity) {
+        return (identity == 1092) || (identity == 1093);
     }
 
     public int parse(double pulse, boolean isMark) {
