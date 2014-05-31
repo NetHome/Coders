@@ -180,13 +180,23 @@ public class FineOffsetDecoder implements ProtocolDecoder {
             if (isFooGadgetEnergy(identity)) {
                 int energy = binaryMessage.extractInt(ENERGY);
                 ProtocolMessage fooMessage = new ProtocolMessage("FooGadgetEnergy", energy, identity, 0);
-                fooMessage.addField(new FieldValue("Energy", temp));
+                fooMessage.addField(new FieldValue("Energy", energy));
                 fooMessage.addField(new FieldValue("Counter", humidity));
+                fooMessage.addField(new FieldValue("Identity", identity));
+                m_Sink.parsedMessage(fooMessage);
+            } else if (isFooGadgetPulseCounter(identity)) {
+                int energy = binaryMessage.extractInt(ENERGY) + (humidity << 12);
+                ProtocolMessage fooMessage = new ProtocolMessage("FooGadgetPulse", energy, identity, 0);
+                fooMessage.addField(new FieldValue("Pulses", energy));
                 fooMessage.addField(new FieldValue("Identity", identity));
                 m_Sink.parsedMessage(fooMessage);
             }
         }
         state = IDLE;
+    }
+
+    private boolean isFooGadgetPulseCounter(int identity) {
+        return (identity == 1094);
     }
 
     private boolean isFooGadgetEnergy(int identity) {
