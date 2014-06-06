@@ -179,7 +179,7 @@ public class FineOffsetDecoder implements ProtocolDecoder {
             m_Sink.parsedMessage(message);
             if (isFooGadgetEnergy(identity)) {
                 int energy = binaryMessage.extractInt(ENERGY);
-                ProtocolMessage fooMessage = new ProtocolMessage("FooGadgetEnergy", energy, identity, 0);
+                ProtocolMessage fooMessage = new ProtocolMessage("FooGadgetLegacy", energy, identity, 0);
                 fooMessage.addField(new FieldValue("Energy", energy));
                 fooMessage.addField(new FieldValue("Counter", humidity));
                 fooMessage.addField(new FieldValue("Identity", identity));
