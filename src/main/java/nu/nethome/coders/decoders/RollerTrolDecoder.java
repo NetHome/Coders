@@ -38,20 +38,6 @@ public class RollerTrolDecoder implements ProtocolDecoder {
     protected static final int READING_LONG_SPACE = 7;
     protected static final int REPEAT_SCAN = 10;
 
-
-    /**
-     * h = House Code
-     * d = Device Code (Channel)
-     * c = Command
-     * s = Check Sum
-     *
-     * Message is sent LSB first
-     *
-     * ____Byte 4_____  ____Byte 3_____  ____Byte 2_____  ____Byte 1_____  ____Byte 0_____
-     * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0
-     * s s s s s s s s  0 0 0 0 0 0 0 1  c c c c d d d d  h h h h h h h h  h h h h h h h h
-     */
-
     public static final BitString.Field BYTE4 = new BitString.Field(32, 8);
     public static final BitString.Field BYTE3 = new BitString.Field(24, 8);
     public static final BitString.Field BYTE2 = new BitString.Field(16, 8);
@@ -185,7 +171,7 @@ public class RollerTrolDecoder implements ProtocolDecoder {
     }
 
     private void quitParsing(double pulseLength) {
-        if (data.length() > 1) {
+        if (data.length() > 5) {
             m_Sink.partiallyParsedMessage(String.format("RollerTrol Pulse: %g ms, State: %d", pulseLength, state), data.length());
         }
         state = IDLE;
