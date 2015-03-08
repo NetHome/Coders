@@ -73,7 +73,7 @@ public class RollerTrolDecoder implements ProtocolDecoder {
 
     protected void addBit(boolean b) {
         data.addMsb(b);
-        if (data.length() == 40) {
+        if (data.length() == MESSAGE_BIT_LENGTH) {
             decodeMessage(data);
         }
     }
@@ -81,11 +81,9 @@ public class RollerTrolDecoder implements ProtocolDecoder {
     public void decodeMessage(BitString binaryMessage) {
         int houseCode = binaryMessage.extractInt(HOUSE_CODE);
         int deviceCode = binaryMessage.extractInt(DEVICE_CODE);
-        int command = binaryMessage.extractInt(new BitString.Field(20, 4));
-        int checkSum = binaryMessage.extractInt(new BitString.Field(32, 8));
-        int calculatedCheckSum = binaryMessage.extractInt(BYTE0) + binaryMessage.extractInt(BYTE1) +
-                binaryMessage.extractInt(BYTE2) + binaryMessage.extractInt(BYTE3);
-        calculatedCheckSum = (((calculatedCheckSum / 256) + 1) * 256 + 1) - calculatedCheckSum;
+        int command = binaryMessage.extractInt(COMMAND);
+        int checkSum = binaryMessage.extractInt(CHECK_SUM);
+        int calculatedCheckSum = calculateChecksum(binaryMessage);
         if (checkSum == calculatedCheckSum) {
             byte bytes[] = new byte[5];
             bytes[0] = (byte) binaryMessage.extractInt(BYTE4);

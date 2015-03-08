@@ -10,6 +10,9 @@ import static nu.nethome.coders.RollerTrol.*;
  */
 public class RollerTrolEncoder implements ProtocolEncoder {
 
+    public static final int PREAMBLE_LENGTH = 4;
+    public static final int CONSTANT_FIELD_VALUE = 1;
+
     @Override
     public ProtocolInfo getInfo() {
         return ROLLERTROL_PROTOCOL_INFO;
@@ -35,11 +38,27 @@ public class RollerTrolEncoder implements ProtocolEncoder {
     }
 
     private int[] encode(int houseCode, int deviceCode, int command) {
-        int[] result = new int[4];
+        int[] result = new int[PREAMBLE_LENGTH + MESSAGE_BIT_LENGTH * 2];
         result[0] = RollerTrol.LONG_PREAMBLE_MARK.length();
         result[1] = RollerTrol.LONG_PREAMBLE_SPACE.length();
         result[2] = RollerTrol.SHORT_PREAMBLE_MARK.length();
         result[3] = RollerTrol.SHORT.length();
+        BitString message = new BitString(MESSAGE_BIT_LENGTH);
+        message.insert(RollerTrol.COMMAND, command);
+        message.insert(RollerTrol.HOUSE_CODE, houseCode);
+        message.insert(RollerTrol.DEVICE_CODE, deviceCode);
+        message.insert(CONSTANT_FIELD, CONSTANT_FIELD_VALUE);
+        message.insert(CHECK_SUM, RollerTrol.calculateChecksum(message));
+        int resultPosition = PREAMBLE_LENGTH;
+        for (int i = 0; i < MESSAGE_BIT_LENGTH; i++) {
+            if (message.getBit(i)) {
+                result[resultPosition++] = LONG.length();
+                result[resultPosition++] = SHORT.length();
+            } else {
+                result[resultPosition++] = SHORT.length();
+                result[resultPosition++] = LONG.length();
+            }
+        }
         return result;
     }
 

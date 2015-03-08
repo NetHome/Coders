@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2013, Stefan Strömberg <stefangs@nethome.nu>
+ * Copyright (C) 2005-2015, Stefan Strömberg <stefangs@nethome.nu>
  *
  * This file is part of OpenNetHome (http://www.nethome.nu).
  *
@@ -37,6 +37,7 @@ public class Encoders {
         result.add(WavemanEncoder.class);
         result.add(X10Encoder.class);
         result.add(ZhejiangEncoder.class);
+        result.add(RollerTrolEncoder.class);
         return result;
     }
 }
