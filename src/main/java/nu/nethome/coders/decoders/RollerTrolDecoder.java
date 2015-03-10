@@ -37,6 +37,9 @@ public class RollerTrolDecoder implements ProtocolDecoder {
     protected static final int READING_SHORT_SPACE = 6;
     protected static final int READING_LONG_SPACE = 7;
     protected static final int REPEAT_SCAN = 10;
+    /*This is the minimum repeat gap that Tellstick supports, so I accept this as a repeat gap too*/
+    public static final PulseLength TELLSTICK_MIN_REPEAT_GAP =
+            new PulseLength(RollerTrolDecoder.class, "TELLSTICK_MIN_REPEAT_GAP", 1000, 800, 1200);
 
     public static final BitString.Field BYTE4 = new BitString.Field(32, 8);
     public static final BitString.Field BYTE3 = new BitString.Field(24, 8);
@@ -160,7 +163,9 @@ public class RollerTrolDecoder implements ProtocolDecoder {
                     data.clear();
                     repeat++;
                     state = READING_LONG_PREAMBLE_SPACE;
-                } else if (!RollerTrol.LONG.matches(pulse) && !RollerTrol.SHORT.matches(pulse)) {
+                } else if (!RollerTrol.LONG.matches(pulse) &&
+                        !RollerTrol.SHORT.matches(pulse) &&
+                        !TELLSTICK_MIN_REPEAT_GAP.matches(pulse)) {
                     state = IDLE;
                 }
                 break;
