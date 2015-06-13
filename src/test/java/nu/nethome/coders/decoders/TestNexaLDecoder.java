@@ -173,7 +173,7 @@ public class TestNexaLDecoder {
 	@Test
 	public void JirDavidNaslund() {
 		JirFileTestPlayer player = new JirFileTestPlayer(JirFileTestPlayer.ALL_DECODERS);
-		player.m_FlankDetector.setFlankSwing(50);
+		player.m_FlankDetector.setFlankSwing(40);
 		player.m_FlankDetector.setFlankLength(4);
 		player.m_FlankDetector.setPulseWidthCompensation(0);
 		
