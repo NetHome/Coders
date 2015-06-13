@@ -53,6 +53,7 @@ public class JirFileTestPlayer implements ProtocolDecoderSink{
 	public static final int OREGON_DECODER = 1 << 14;
 	public static final int FINE_OFFSET_DECODER = 1 << 15;
 	public static final int ROLLERTROL_DECODER = 1 << 16;
+	public static final int ROLLERTROL_G_DECODER = 1 << 17;
 
 	public static final int ALL_DECODERS = 0x7FFFFFFF;
 
@@ -84,6 +85,7 @@ public class JirFileTestPlayer implements ProtocolDecoderSink{
 		if ((decoders & OREGON_DECODER) != 0) m_ProtocolDecoders.add(new OregonDecoder());
 		if ((decoders & FINE_OFFSET_DECODER) != 0) m_ProtocolDecoders.add(new FineOffsetDecoder());
 		if ((decoders & ROLLERTROL_DECODER) != 0) m_ProtocolDecoders.add(new RollerTrolDecoder());
+		if ((decoders & ROLLERTROL_G_DECODER) != 0) m_ProtocolDecoders.add(new RollerTrolGDecoder());
 
         // Set the Sink - which is this class
         m_ProtocolDecoders.setTarget(this);

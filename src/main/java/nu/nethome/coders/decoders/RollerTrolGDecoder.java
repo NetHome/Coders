@@ -7,7 +7,7 @@ import nu.nethome.util.ps.*;
 /**
  *
  */
-public class RollerTrolGDecoder {
+public class RollerTrolGDecoder  implements ProtocolDecoder {
 
     protected static final int IDLE = 0;
     protected static final int READING_LONG_PREAMBLE_SPACE = 2;
@@ -39,7 +39,7 @@ public class RollerTrolGDecoder {
     }
 
     protected void addBit(boolean b) {
-        data.addLsb(!b);
+        data.addLsb(b);
         if (data.length() == RollerTrolG.PROTOCOL_BIT_LENGTH) {
             decodeMessage(data);
         }
@@ -62,9 +62,9 @@ public class RollerTrolGDecoder {
         message.setRawMessageByteAt(3, bytes[3]);
         message.setRawMessageByteAt(4, bytes[4]);
 
-        message.addField(new FieldValue("Command", command));
-        message.addField(new FieldValue("Channel", channel));
-        message.addField(new FieldValue("Address", address));
+        message.addField(new FieldValue(RollerTrolG.COMMAND_NAME, command));
+        message.addField(new FieldValue(RollerTrolG.CHANNEL_NAME, channel));
+        message.addField(new FieldValue(RollerTrolG.ADDRESS_NAME, address));
         message.setRepeat(repeat);
         m_Sink.parsedMessage(message);
         state = REPEAT_SCAN;
@@ -91,10 +91,10 @@ public class RollerTrolGDecoder {
             case READING_MARK: {
                 if (RollerTrolG.SHORT.matches(pulse)) {
                     state = READING_LONG_SPACE;
-                    addBit(true);
+                    addBit(false);
                 } else if (RollerTrolG.LONG.matches(pulse)) {
                     state = READING_SHORT_SPACE;
-                    addBit(false);
+                    addBit(true);
                 } else {
                     quitParsing(pulse);
                 }

@@ -47,6 +47,8 @@ public class Decoders {
         result.add(ZhejiangDecoder.class);
         result.add(OregonDecoder.class);
         result.add(FineOffsetDecoder.class);
+        result.add(RollerTrolDecoder.class);
+        result.add(RollerTrolGDecoder.class);
         return result;
     }
 }

@@ -31,4 +31,7 @@ public class RollerTrolG {
     public static final BitString.Field COMMAND = new BitString.Field(0, 8);
     public static final BitString.Field CHANNEL = new BitString.Field(8, 4);
     public static final BitString.Field ADDRESS = new BitString.Field(12, 28);
+    public static final String COMMAND_NAME = "Command";
+    public static final String CHANNEL_NAME = "Channel";
+    public static final String ADDRESS_NAME = "Address";
 }
