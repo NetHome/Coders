@@ -26,7 +26,7 @@ public class RollerTrolG {
     public static final PulseLength LONG =
             new PulseLength(RollerTrolGDecoder.class, "LONG", 770, 600, 900);
     public static final PulseLength REPEAT_SPACE =
-            new PulseLength(RollerTrolGDecoder.class, "REPEAT_SPACE", 9100, 8000, 12000);
+            new PulseLength(RollerTrolGDecoder.class, "REPEAT_SPACE", 7400, 7000, 11000);
 
     public static final BitString.Field COMMAND = new BitString.Field(0, 8);
     public static final BitString.Field CHANNEL = new BitString.Field(8, 4);
