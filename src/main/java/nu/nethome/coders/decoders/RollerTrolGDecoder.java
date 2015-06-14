@@ -55,7 +55,7 @@ public class RollerTrolGDecoder  implements ProtocolDecoder {
         bytes[2] = binaryMessage.extractInt(BYTE2);
         bytes[3] = binaryMessage.extractInt(BYTE1);
         bytes[4] = binaryMessage.extractInt(BYTE0);
-        ProtocolMessage message = new ProtocolMessage(RollerTrol.ROLLER_TROL_PROTOCOL_NAME, command, channel, 5);
+        ProtocolMessage message = new ProtocolMessage(RollerTrolG.ROLLER_TROL_G_PROTOCOL_NAME, command, channel, 5);
         message.setRawMessageByteAt(0, bytes[0]);
         message.setRawMessageByteAt(1, bytes[1]);
         message.setRawMessageByteAt(2, bytes[2]);

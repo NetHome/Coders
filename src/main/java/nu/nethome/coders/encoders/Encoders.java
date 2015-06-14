@@ -38,6 +38,7 @@ public class Encoders {
         result.add(X10Encoder.class);
         result.add(ZhejiangEncoder.class);
         result.add(RollerTrolEncoder.class);
+        result.add(RollerTrolGEncoder.class);
         return result;
     }
 }
