@@ -102,7 +102,7 @@ public class UPMDecoder implements ProtocolDecoder {
 			/*
 			 * My current understanding of the UPM data message:
 			 * The message consists of four bytes.
-			 * 
+			 * x = Wake Up Code (1100)
 			 * c = House Code (0 - 15)
 			 * d = Device Code (1 - 4) ?
 			 * p = Primary value - Temperature/Rain/Wind speed value (low bits)
@@ -110,8 +110,6 @@ public class UPMDecoder implements ProtocolDecoder {
 			 * s = Secondary value - Humidity/Wind direction (low bits)
 			 * S = Secondary value - Humidity/Wind direction (high bits)
 			 * b = Low battery indication
-			 * x = ?
-			 * y = ?
 			 * z = Sequence number 0 - 2. Messages are sent in bursts of 3. For some senders this is always 0
 			 * C = Checksum. bit 1 is XOR of odd bits, bit 0 XOR of even bits in message
 			 * 
@@ -122,7 +120,7 @@ public class UPMDecoder implements ProtocolDecoder {
 			 * 
 			 * ____Byte 0_____  ____Byte 1_____  ____Byte 2_____  ____Byte 3_____  _Nib4__
 			 * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  3 2 1 0
-			 * x x x x c c c c  d d y y b S S S  s s s s P P P P  p p p p p p p p  z z C C
+			 * x x x x c c c c  d d 1 1 b S S S  s s s s 0 P P P  p p p p p p p p  z z C C
 			 *                                            
 			 * Temp (C) = RawValue / 16 - 50
 			 * Rain (total mm) = RawValue * 0,7
