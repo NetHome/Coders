@@ -2,6 +2,10 @@ package nu.nethome.coders.decoders;
 
 import nu.nethome.coders.RollerTrolG;
 import nu.nethome.util.ps.*;
+import nu.nethome.util.ps.BitString.Field;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class PrologueDecoder implements ProtocolDecoder {
 
@@ -9,8 +13,7 @@ public class PrologueDecoder implements ProtocolDecoder {
     protected static final int READING_MARK = 5;
     protected static final int READING_SPACE = 6;
     protected static final int REPEAT_SCAN = 10;
-    protected static final int PROLOGUE_BIT_LENGTH = 36;
-
+    protected static final int PROLOGUE_BIT_LENGTH = 37;
     public static final ProtocolInfo PROLOGUE_PROTOCOL_INFO = new ProtocolInfo("Prologue", "Space Length", "Prologue", PROLOGUE_BIT_LENGTH, 1);
 
     public static final PulseLength PREAMBLE_SPACE =
@@ -27,6 +30,18 @@ public class PrologueDecoder implements ProtocolDecoder {
     BitString lastParsedData = new BitString();
     protected int state = IDLE;
     private int repeat = 0;
+    private Map<String, Field> fields = new HashMap<String, Field>();
+
+    public PrologueDecoder() {
+        fields.put("Humidity", new Field(0+1, 8));
+        fields.put("Temp", new Field(8+1, 12));
+        fields.put("Channel", new Field(20+1, 2));
+        fields.put("Button", new Field(22+1, 1));
+        fields.put("Battery", new Field(23+1, 1));
+        fields.put("RollingId", new Field(24+1, 8));
+        fields.put("Id", new Field(32+1, 4));
+        fields.put("Last", new Field(0, 1));
+    }
 
     public void setTarget(ProtocolDecoderSink sink) {
         m_Sink = sink;
@@ -44,11 +59,12 @@ public class PrologueDecoder implements ProtocolDecoder {
     }
 
     public void decodeMessage(BitString binaryMessage) {
-//        int channel = binaryMessage.extractInt(RollerTrolG.CHANNEL);
-
-        ProtocolMessage message = new ProtocolMessage(RollerTrolG.ROLLER_TROL_G_PROTOCOL_NAME, 0, 0, data.toByteInts());
-
-//        message.addField(new FieldValue(RollerTrolG.COMMAND_NAME, command));
+        ProtocolMessage message = new ProtocolMessage("Prologue", data.extractInt(fields.get("Temp")), data.extractInt(fields.get("Channel")), data.toByteInts());
+        for (String field : fields.keySet()) {
+            message.addField(new FieldValue(field, data.extractInt(fields.get(field))));
+            System.out.printf("%s:%d ", field, data.extractInt(fields.get(field)));
+        }
+        System.out.printf("\n");
         message.setRepeat(repeat);
         if (data.equals(lastParsedData)) {
             m_Sink.parsedMessage(message);
@@ -78,19 +94,24 @@ public class PrologueDecoder implements ProtocolDecoder {
             case READING_SPACE: {
                 if (SHORT_SPACE.matches(pulse)) {
                     state = READING_MARK;
-                    addBit(true);
+                    addBit(false);
                 } else if (LONG_SPACE.matches(pulse)) {
                     state = READING_MARK;
-                    addBit(false);
+                    addBit(true);
                 } else {
                     quitParsing(pulse);
                 }
                 break;
             }
             case REPEAT_SCAN: {
-                if (PREAMBLE_SPACE.matches(pulse) && !bitstate) {
+                if (MARK.matches(pulse) && bitstate) {
+                    // Ok read mark
+                } else if (PREAMBLE_SPACE.matches(pulse) && !bitstate) {
                     data.clear();
+                    repeat++;
                     state = READING_MARK;
+                } else {
+                    state = IDLE;
                 }
                 break;
             }
