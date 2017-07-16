@@ -139,7 +139,7 @@ public class X10Decoder implements ProtocolDecoder {
 	 * to the latest addressed device. House Code is always sent.
 	 * <br> 
 	 * N= Not On<br>
-	 * C= Command bit, 0->address mode, 1->command mode<br>
+	 * C= Command bit, 0=address mode, 1=command mode<br>
 	 * 0-3 Button address<br>
 	 * a= House Code (scattered coding)<br>
 	 * c= command. 00=All Off, 01=Bright, 10=All On, 11=Dim<br> 

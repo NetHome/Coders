@@ -73,12 +73,12 @@ public class NexaEncoder implements ProtocolEncoder {
 
     /**
      * Encodes the current message according to the following protocol:
-     * <p/>
+     * <br>
      * s = Start bit = 0
      * b = Button number
      * a = Address
      * o = On/Off-bit
-     * <p/>
+     * <br>
      * ____Byte 2_____  ____Byte 1_____  ____Byte 0_____  _S_
      * 7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0   0
      * x o x 1 x 1 x x  x b x b x b x b  x a x a x a x a   s

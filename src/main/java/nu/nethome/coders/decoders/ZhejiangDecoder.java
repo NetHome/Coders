@@ -33,10 +33,10 @@ import nu.nethome.util.ps.PulseLength;
  * one by one. It contains a state machine, and when a complete message is decoded,
  * this is reported over the ProtocolDecoderSink-interface which is given at
  * construction.
- * <p/>
+ * <br>
  * The protocol is mark length encoded and the protocol messages has the following
  * layout:<br>
- * <p/>
+ * <br>
  * s = Start bit = 0<br>
  * a = Channel 1 not selected<br>
  * b = Channel 2 not selected<br>
@@ -53,7 +53,7 @@ import nu.nethome.util.ps.PulseLength;
  *_S_ ____Byte 2_____  ____Byte 1_____  ____Byte 0_____ <br>
  * 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0  7 6 5 4 3 2 1 0 <br>
  * x  o 0 1 0 j 0 i 0  h 0 g 0 f 0 1 e  1 d 1 c 1 b 1 a <br>
- * <p/>
+ * <br>
  * This protocol is almost exactly the same as NEXA, so the entire implementation is reused.
  *
  * @author Stefan
