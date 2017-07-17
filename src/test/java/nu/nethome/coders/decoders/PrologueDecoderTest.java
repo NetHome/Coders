@@ -22,8 +22,8 @@ public class PrologueDecoderTest {
         player.playFile(this.getClass().getClassLoader()
                 .getResourceAsStream("nu/nethome/coders/decoders/prologue.jir"));
 
-        //assertThat(player.m_Messages.size(), is(4));
-        //assertThat(player.m_Messages.get(3).getRepeat(), is(3));
+        assertThat(player.m_Messages.size(), is(5));
+        assertThat(player.m_Messages.get(4).getRepeat(), is(4));
         assertThat(player.getMessageField(0, "Temp"), is(261));
         assertThat(player.getMessageField(0, "Button"), is(1));
         assertThat(player.getMessageField(0, "Battery"), is(0));

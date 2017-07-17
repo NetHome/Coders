@@ -49,6 +49,7 @@ public class Decoders {
         result.add(FineOffsetDecoder.class);
         result.add(RollerTrolDecoder.class);
         result.add(RollerTrolGDecoder.class);
+        result.add(PrologueDecoder.class);
         return result;
     }
 }
