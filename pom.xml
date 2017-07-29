@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>coders</artifactId>
     <groupId>nu.nethome</groupId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <name>coders</name>
     <url>http://www.nethome.nu</url>
     <properties>
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>nu.nethome</groupId>
             <artifactId>utils</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>1.1</version>
         </dependency>
     </dependencies>
 </project>
